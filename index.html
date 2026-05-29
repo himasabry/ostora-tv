@@ -36,7 +36,8 @@ const API_URL = "https://brown-antelope-528999.hostingersite.com/ostora/channels
 
 let hls;
 
-async function loadData(){
+// 🔥 تحميل القنوات مباشرة (بدون أقسام)
+async function loadChannels(){
 
 const res = await fetch(API_URL);
 const data = await res.json();
@@ -48,7 +49,7 @@ grid.innerHTML = "";
 
 grid.innerHTML += `
 <div class="card" onclick="play('${item.stream_url}')">
-<img src="${item.image}">
+<img src="${item.image || ''}">
 <div class="name">${item.name}</div>
 </div>
 `;
@@ -57,6 +58,7 @@ grid.innerHTML += `
 
 }
 
+// 🔥 تشغيل القناة
 function play(url){
 
 document.getElementById("player").style.display="flex";
@@ -82,7 +84,7 @@ video.play();
 
 }
 
-loadData();
+loadChannels();
 
 </script>
 
