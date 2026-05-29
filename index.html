@@ -12,18 +12,58 @@
 <style>
 body{margin:0;background:#000;color:#fff;font-family:Cairo}
 .header{padding:15px;text-align:center;background:#111;font-size:22px;font-weight:bold}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px}
-.card{background:#111;border-radius:10px;overflow:hidden;cursor:pointer}
-.card img{width:100%;aspect-ratio:1/1;object-fit:cover}
-.name{padding:8px;text-align:center;font-size:12px;height:40px;display:flex;align-items:center;justify-content:center}
-.player{position:fixed;inset:0;display:none;background:rgba(0,0,0,.95);justify-content:center;align-items:center;z-index:999}
-video{width:100%}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+padding:10px;
+}
+
+.card{
+background:#111;
+border-radius:10px;
+overflow:hidden;
+cursor:pointer;
+}
+
+.card img{
+width:100%;
+aspect-ratio:1/1;
+object-fit:cover;
+}
+
+.name{
+padding:8px;
+text-align:center;
+font-size:12px;
+height:40px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+
+.player{
+position:fixed;
+inset:0;
+display:none;
+background:rgba(0,0,0,.95);
+justify-content:center;
+align-items:center;
+z-index:999;
+}
+
+video{
+width:100%;
+}
 </style>
+
 </head>
 
 <body>
 
 <div class="header">OSTORA TV</div>
+
 <div class="grid" id="grid"></div>
 
 <div class="player" id="player">
@@ -34,10 +74,14 @@ video{width:100%}
 
 const API_URL = "https://brown-antelope-528999.hostingersite.com/ostora/channels.php";
 
-let hls;
+let hls = null;
 
-// 🔥 تحميل القنوات مباشرة (بدون أقسام)
+// =======================
+// LOAD CHANNELS
+// =======================
 async function loadChannels(){
+
+try {
 
 const res = await fetch(API_URL);
 const data = await res.json();
@@ -45,23 +89,46 @@ const data = await res.json();
 const grid = document.getElementById("grid");
 grid.innerHTML = "";
 
-(data.items || []).forEach(item => {
+if(!data.items || data.items.length === 0){
+grid.innerHTML = "<p style='text-align:center;color:red'>لا توجد قنوات</p>";
+return;
+}
 
-grid.innerHTML += `
-<div class="card" onclick="play('${item.stream_url}')">
+data.items.forEach(item => {
+
+const div = document.createElement("div");
+div.className = "card";
+
+div.innerHTML = `
 <img src="${item.image || ''}">
-<div class="name">${item.name}</div>
-</div>
+<div class="name">${item.name || ''}</div>
 `;
+
+div.onclick = () => playChannel(item.stream_url);
+
+grid.appendChild(div);
 
 });
 
+} catch (e) {
+document.getElementById("grid").innerHTML =
+"<p style='color:red;text-align:center'>خطأ في تحميل البيانات</p>";
+console.log(e);
 }
 
-// 🔥 تشغيل القناة
-function play(url){
+}
 
-document.getElementById("player").style.display="flex";
+// =======================
+// PLAY CHANNEL
+// =======================
+function playChannel(url){
+
+if(!url){
+alert("لا يوجد رابط تشغيل");
+return;
+}
+
+document.getElementById("player").style.display = "flex";
 
 const video = document.getElementById("video");
 
@@ -71,11 +138,16 @@ if(Hls.isSupported()){
 
 if(hls) hls.destroy();
 
-hls = new Hls();
+hls = new Hls({
+enableWorker:true
+});
+
 hls.loadSource(proxyUrl);
 hls.attachMedia(video);
 
-hls.on(Hls.Events.MANIFEST_PARSED, ()=>video.play());
+hls.on(Hls.Events.MANIFEST_PARSED, () => {
+video.play();
+});
 
 }else{
 video.src = proxyUrl;
@@ -83,6 +155,14 @@ video.play();
 }
 
 }
+
+// Close on ESC
+document.addEventListener("keydown",(e)=>{
+if(e.key==="Escape"){
+document.getElementById("player").style.display="none";
+document.getElementById("video").pause();
+}
+});
 
 loadChannels();
 
