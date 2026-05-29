@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>OSTORA TV</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
@@ -10,12 +11,12 @@
 
 <style>
 body{margin:0;background:#000;color:#fff;font-family:Cairo}
-.header{padding:15px;text-align:center;background:#111;font-size:22px}
+.header{padding:15px;text-align:center;background:#111;font-size:22px;font-weight:bold}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px}
 .card{background:#111;border-radius:10px;overflow:hidden;cursor:pointer}
 .card img{width:100%;aspect-ratio:1/1;object-fit:cover}
-.name{padding:8px;text-align:center;font-size:12px}
-.player{position:fixed;inset:0;display:none;background:rgba(0,0,0,.95);justify-content:center;align-items:center}
+.name{padding:8px;text-align:center;font-size:12px;height:40px;display:flex;align-items:center;justify-content:center}
+.player{position:fixed;inset:0;display:none;background:rgba(0,0,0,.95);justify-content:center;align-items:center;z-index:999}
 video{width:100%}
 </style>
 </head>
@@ -26,7 +27,7 @@ video{width:100%}
 <div class="grid" id="grid"></div>
 
 <div class="player" id="player">
-<video id="video" controls></video>
+<video id="video" controls autoplay></video>
 </div>
 
 <script>
@@ -36,37 +37,49 @@ const API_URL = "https://brown-antelope-528999.hostingersite.com/ostora/channels
 let hls;
 
 async function loadData(){
+
 const res = await fetch(API_URL);
 const data = await res.json();
 
 const grid = document.getElementById("grid");
 grid.innerHTML = "";
 
-data.items.forEach(item=>{
+(data.items || []).forEach(item => {
+
 grid.innerHTML += `
 <div class="card" onclick="play('${item.stream_url}')">
 <img src="${item.image}">
 <div class="name">${item.name}</div>
-</div>`;
+</div>
+`;
+
 });
+
 }
 
 function play(url){
+
 document.getElementById("player").style.display="flex";
 
 const video = document.getElementById("video");
 
+const proxyUrl = `/api/proxy?url=${encodeURIComponent(url)}`;
+
 if(Hls.isSupported()){
+
 if(hls) hls.destroy();
 
 hls = new Hls();
-hls.loadSource(url);
+hls.loadSource(proxyUrl);
 hls.attachMedia(video);
+
 hls.on(Hls.Events.MANIFEST_PARSED, ()=>video.play());
+
 }else{
-video.src = url;
+video.src = proxyUrl;
 video.play();
 }
+
 }
 
 loadData();
